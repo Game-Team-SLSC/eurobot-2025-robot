@@ -15,7 +15,7 @@ enum PositionName {
     _POSCOUNT
 };
 
-using MovementSet = struct {
+struct MovementSet {
     Movement movement;
     bool state;
 };

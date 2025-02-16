@@ -4,12 +4,14 @@
 #include <Movers.h>
 #include <Display.h>
 #include <ScoreDisplay.h>
+#include <Actuators.h>
 #include <RemoteData.h>
 
 Display& display = Display::getInstance();
 Movers& movers = Movers::getInstance();
 Remote& remote = Remote::getInstance();
 ScoreDisplay& scoreDisplay = ScoreDisplay::getInstance();
+Actuators& actuators = Actuators::getInstance();
 
 RemoteData remoteData;
 
@@ -49,6 +51,7 @@ void processControllerUpdate() {
     (remoteData.joystickLeft.y + remoteData.joystickRight.y) / 2,
     remoteData.joystickRight.x
   );
+
 }
 
 bool checkConnection() {

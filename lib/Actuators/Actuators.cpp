@@ -42,7 +42,7 @@ Actuators::Actuators() : pwm(0x40) {
         // TODO
     });
 
-    positions[PositionName::FOLDED] = Position((MovementSet[]){
+    MovementSet foldedMoves[] = {
         {movements[ARM_DEPLOY], false},
         {movements[MAGNET_ATTACH], true},
         {movements[GRABBER_CATCH], false},
@@ -52,9 +52,9 @@ Actuators::Actuators() : pwm(0x40) {
         {movements[SUCTION_BLOCK_UP], false},
         
         {movements[PUMP_ENABLE], false}
-    });
+    };
 
-    positions[PositionName::APPROACH] = Position((MovementSet[]){
+    MovementSet approachMoves[] = {
         {movements[ARM_DEPLOY], true},
         {movements[MAGNET_ATTACH], false},
         {movements[GRABBER_CATCH], false},
@@ -64,9 +64,9 @@ Actuators::Actuators() : pwm(0x40) {
         {movements[SUCTION_BLOCK_UP], false},
         
         {movements[PUMP_ENABLE], false}
-    });
+    };
 
-    positions[PositionName::TRANSPORT] = Position((MovementSet[]){
+    MovementSet transportMoves[] = {
         {movements[ARM_DEPLOY], true},
         {movements[MAGNET_ATTACH], true},
         {movements[GRABBER_CATCH], true},
@@ -76,9 +76,9 @@ Actuators::Actuators() : pwm(0x40) {
         {movements[SUCTION_BLOCK_UP], false},
         
         {movements[PUMP_ENABLE], false}
-    });
+    };
 
-    positions[PositionName::RELEASE] = Position((MovementSet[]){
+    MovementSet releaseMoves[] = {
         {movements[ARM_DEPLOY], true},
         {movements[MAGNET_ATTACH], false},
         {movements[GRABBER_CATCH], false},
@@ -88,55 +88,65 @@ Actuators::Actuators() : pwm(0x40) {
         //{movements[SUCTION_BLOCK_UP], false},
         
         {movements[PUMP_ENABLE], false}
-    });
+    };
 
-    positions[PositionName::LATERAL] = Position((MovementSet[]){
+    MovementSet lateralMoves[] = {
         {movements[ARM_DEPLOY], false},
         {movements[MAGNET_ATTACH], true},
         {movements[GRABBER_CATCH], true},
         {movements[SUCTION_DEPLOY], true},
-
+        
         //{movements[GRABBER_BLOCK_UP], false},
         //{movements[SUCTION_BLOCK_UP], false},
         
         {movements[PUMP_ENABLE], true}
-    });
-    
-    positions[PositionName::CATCH] = Position((MovementSet[]){
+    };
+
+    MovementSet catchMoves[] = {
         //{movements[ARM_DEPLOY], true},
         //{movements[MAGNET_ATTACH], true},
         {movements[GRABBER_CATCH], true},
         //{movements[SUCTION_DEPLOY], true},
-
+        
         //{movements[GRABBER_BLOCK_UP], false},
         //{movements[SUCTION_BLOCK_UP], false},
-
+        
         //{movements[PUMP_ENABLE], false}
-    });
-    
-    positions[PositionName::S1] = Position((MovementSet[]){
+    };
+
+    MovementSet s1Moves[] = {
         //{movements[ARM_DEPLOY], false},
         //{movements[MAGNET_ATTACH], true},
         //{movements[GRABBER_CATCH], true},
         //{movements[SUCTION_DEPLOY], true},
-
+        
         {movements[GRABBER_BLOCK_UP], false},
         {movements[SUCTION_BLOCK_UP], false},
         
         //{movements[PUMP_ENABLE], true}
-    });
+    };
 
-    positions[PositionName::S2] = Position((MovementSet[]){
+    MovementSet s2Moves[] = {
         //{movements[ARM_DEPLOY], false},
         //{movements[MAGNET_ATTACH], true},
         //{movements[GRABBER_CATCH], true},
         //{movements[SUCTION_DEPLOY], true},
-
+        
         {movements[GRABBER_BLOCK_UP], true},
         {movements[SUCTION_BLOCK_UP], true},
         
         //{movements[PUMP_ENABLE], true}
-    });
+    };
+
+    positions[PositionName::FOLDED] = Position(foldedMoves);
+    positions[PositionName::APPROACH] = Position(approachMoves);
+    positions[PositionName::TRANSPORT] = Position(transportMoves);
+    positions[PositionName::RELEASE] = Position(releaseMoves);
+    positions[PositionName::LATERAL] = Position(lateralMoves);
+    positions[PositionName::CATCH] = Position(catchMoves);
+    
+    positions[PositionName::S1] = Position(s1Moves);
+    positions[PositionName::S2] = Position(s2Moves);
 }
 
 Actuators& Actuators::getInstance() {
@@ -145,7 +155,7 @@ Actuators& Actuators::getInstance() {
 }
 // UTILITY
 
-short Actuators::getUSFromAngle(byte angle, boolean ccw = false) {
+short Actuators::getUSFromAngle(byte angle, boolean ccw) {
     return map(min(angle, 180), 0, 180, 1000, 2000) - (ccw ? 1000 : 0);
 }
 
