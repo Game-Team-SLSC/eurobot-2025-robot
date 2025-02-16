@@ -11,19 +11,10 @@ struct RemoteData
     JoystickData joystickLeft;
     JoystickData joystickRight;
 
-    bool buttons[10];
-    byte slider;
-    byte score;
-    SWITCH_3_POS sw;
-
-    bool operator==(const RemoteData &other) {
-        return slider == other.slider &&
-               score == other.score &&
-               sw == other.sw &&
-               joystickLeft == other.joystickLeft &&
-               joystickRight == other.joystickRight &&
-               memcmp(buttons, other.buttons, sizeof(buttons)) == 0;
-    }
+    bool buttons[10]; // for each button true if pressed
+    byte slider; // 0 to 255
+    byte score; // 0 to 255
+    SWITCH_3_POS sw; // 3 position switch
 };
 
 #endif
