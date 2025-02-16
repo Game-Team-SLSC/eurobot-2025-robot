@@ -78,6 +78,25 @@ enum Servos {
 #define BANNER_DEP_ANGLE 0
 #define BANNER_RET_ANGLE 0
 
+// BUTTONS CONFIG
+
+enum Buttons {
+    // auto
+    GAME_START_AUTO,
+    STACK_2_AUTO,
+    STACK_3_AUTO,
+
+    // manual
+    APPROACH,
+    TRANSPORT,
+    RELEASE,
+    LATERAL_W_PUMP,
+    CATCH,
+
+    STAGE_1,
+    STAGE_2,
+};
+
 // MISC
 
 #define STATUS_LED 13

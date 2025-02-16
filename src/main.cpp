@@ -32,6 +32,11 @@ void setup() {
   scoreDisplay.setup();
   info("Score display setup");
 
+  actuators.setup();
+  info("Actuators setup");
+
+  actuators.setPosition(PositionName::FOLDED);
+
   info("Setup complete");
 }
 
@@ -52,6 +57,9 @@ void processControllerUpdate() {
     remoteData.joystickRight.x
   );
 
+  movers.setSpeed(remoteData.slider);
+
+  
 }
 
 bool checkConnection() {

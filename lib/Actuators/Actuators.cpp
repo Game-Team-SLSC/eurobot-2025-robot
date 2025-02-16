@@ -220,4 +220,10 @@ void Actuators::setPumps(bool enabled) {
     digitalWrite(PUMP_RLY, enabled? HIGH : LOW);
 }
 
-// PUBLIC
+void moveGRBBlock(bool up) {
+    // TODO
+}
+
+void moveSUCBlock(bool up) {
+    // TODO
+}
