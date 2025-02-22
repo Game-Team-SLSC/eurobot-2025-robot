@@ -1,14 +1,19 @@
 #include <Actuators.h>
 #include <RobotSettings.h>
 #include <Arduino.h>
-#include <RobotState.h>
 #include <Movement.h>
 #include <Position.h>
 
-// CONSTRUCTORS
+
 
 // Actuators
-Actuators::Actuators() : pwm(0x40) {
+Actuators::Actuators() :
+    pwm(0x40),
+    grbDriver(&GRB_SERIAL, R_SENSE, 0b00),
+    sucDriver(&SC_SERIAL, R_SENSE, 0b00),
+    grbStepper(AccelStepper::DRIVER, GRB_STEP, GRB_DIR),
+    sucStepper(AccelStepper::DRIVER, SC_STEP, SC_DIR)
+{
     positions = {};
     Movement movements[] = {};
 
@@ -167,7 +172,19 @@ void Actuators::setup() {
     pwm.setOscillatorFrequency(27000000);
     pwm.setPWMFreq(50);
 
-    
+    GRB_SERIAL.begin(9600);
+    while (!GRB_SERIAL);
+
+    // see laptop
+    grbDriver.begin();
+    grbDriver.rms_current(900);
+    grbDriver.microsteps(16);
+    grbDriver.pwm_autoscale(1);
+
+    grbStepper.setMaxSpeed(STEPS_PER_MM * 100);
+    grbStepper.enableOutputs();
+
+    SC_SERIAL.begin(9600);
 
     pinMode(PUMP_RLY, OUTPUT);
 }
@@ -175,44 +192,45 @@ void Actuators::setup() {
 void Actuators::setMagnets(bool attaching) {
     pwm.writeMicroseconds(
         Servos::GRB_MAGNET_LEFT,
-        getUSFromAngle(attaching? GRB_MAGNET_ATTACH_ANGLE : GRB_MAGNET_RELEASE_ANGLE)
+        getUSFromAngle(attaching? GRB_MAGNET_ATTACH_ANGLE_L : GRB_MAGNET_RELEASE_ANGLE_L)
     );
+
     pwm.writeMicroseconds(
         Servos::GRB_MAGNET_RIGHT,
-        getUSFromAngle(attaching? GRB_MAGNET_ATTACH_ANGLE : GRB_MAGNET_RELEASE_ANGLE, true)
+        getUSFromAngle(attaching? GRB_MAGNET_ATTACH_ANGLE_R : GRB_MAGNET_RELEASE_ANGLE_R)
     );
 }
 
 void Actuators::setArms(bool deployed) {
     pwm.writeMicroseconds(
         Servos::GRB_ARM_LEFT,
-        getUSFromAngle(deployed? GRB_ARM_DEP_ANGLE : GRB_ARM_DEP_ANGLE)
+        getUSFromAngle(deployed? GRB_ARM_DEP_ANGLE_L : GRB_ARM_DEP_ANGLE_L)
     );
     pwm.writeMicroseconds(
         Servos::GRB_ARM_RIGHT,
-        getUSFromAngle(deployed? GRB_ARM_DEP_ANGLE : GRB_ARM_DEP_ANGLE, true)
+        getUSFromAngle(deployed? GRB_ARM_DEP_ANGLE_R : GRB_ARM_DEP_ANGLE_R)
     );
 }
 
 void Actuators::setGrabbers(bool catching) {
     pwm.writeMicroseconds(
         Servos::GRB_LEFT,
-        getUSFromAngle(catching? GRB_CLOSE_ANGLE : GRB_OPEN_ANGLE)
+        getUSFromAngle(catching? GRB_CATCH_ANGLE_L : GRB_RELEASE_ANGLE_L)
     );
     pwm.writeMicroseconds(
         Servos::GRB_RIGHT,
-        getUSFromAngle(catching? GRB_CLOSE_ANGLE : GRB_OPEN_ANGLE, true)
+        getUSFromAngle(catching? GRB_CATCH_ANGLE_R : GRB_RELEASE_ANGLE_R)
     );
 }
 
 void Actuators::setSuction(bool deployed) {
     pwm.writeMicroseconds(
         Servos::SC_LEFT,
-        getUSFromAngle(deployed? SC_DEP_ANGLE : SC_RET_ANGLE)
+        getUSFromAngle(deployed? SC_DEP_ANGLE_L : SC_RET_ANGLE_L)
     );
     pwm.writeMicroseconds(
         Servos::SC_RIGHT,
-        getUSFromAngle(deployed? SC_DEP_ANGLE : SC_RET_ANGLE, true)
+        getUSFromAngle(deployed? SC_DEP_ANGLE_R : SC_RET_ANGLE_R)
     );
 }
 

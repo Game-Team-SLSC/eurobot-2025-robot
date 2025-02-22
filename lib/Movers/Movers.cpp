@@ -1,54 +1,74 @@
 #include <Movers.h>
 #include <Arduino.h>
-#include <Sabertooth.h>
-#include <SoftwareSerial.h>
+#include <L298NX2.h>
+#include <GlobalState.h>
 
-SoftwareSerial sbrSerial(NOT_A_PIN, 10);
-
-const float X_FACTOR_RATIO = X_MOVE_FACTOR/255;
-const float Y_FACTOR_RATIO = Y_MOVE_FACTOR/255;
+const float LATERAL_MVT_RATIO = X_MOVE_FACTOR/255;
+const float FRW_MVT_RATIO = Y_MOVE_FACTOR/255;
 const float YAW_FACTOR_RATIO = YAW_FACTOR/255;
 
-Movers::Movers() : saberFront(128, sbrSerial), saberBack(129, sbrSerial) {
-    speedRatio = 1;
-}
+GlobalState& globalState = GlobalState::getInstance();
+
+Movers::Movers() :
+    frontDriver(FL_EN, FL_IN1, FL_IN2, FR_EN, FR_IN1, FR_IN2),
+    rearDriver(RL_EN, RL_IN1, RL_IN2, RR_EN, RR_IN1, RR_IN2)
+{};
 
 Movers& Movers::getInstance() {
     static Movers instance;
     return instance;
-}
+};
 
 void Movers::setup() {
-    sbrSerial.begin(9600);
+    frontDriver.stop();
+    rearDriver.stop();
+};
 
-    Sabertooth::autobaud(sbrSerial);
-    saberFront.setTimeout(MOVERS_TIMEOUT);
-    saberBack.setTimeout(MOVERS_TIMEOUT);
-    saberFront.setRamping(MOVERS_RAMPING);
-    saberBack.setRamping(MOVERS_RAMPING);
-    saberFront.setDeadband(0);
-    saberBack.setDeadband(0);
-    
-    // find right values
-    // saberFront.setMaxVoltage(71);
-    // saberBack.setMaxVoltage(71);
-}
+void Movers::update() {
+    if (!globalState.remoteConnected.get()) {
+        frontDriver.stop();
+        rearDriver.stop();
+        return;
+    }
+    if (!globalState.travel.hasChanged()) return;
 
-void Movers::drive(byte x, byte y, byte z) {
-    if (x > 255 or x < 0) return;
-    if (y > 255 or y < 0) return;
-    if (z > 255 or z < 0) return;
+    Travel travel = globalState.travel.get();
 
-    x = x * X_FACTOR_RATIO * speedRatio;
-    y = y * Y_FACTOR_RATIO * speedRatio;
-    z = z * YAW_FACTOR_RATIO * speedRatio;
+    char frw = travel.forward * FRW_MVT_RATIO;
+    char lat = travel.lateral * LATERAL_MVT_RATIO;
+    char yaw = travel.yaw * YAW_FACTOR_RATIO;
 
-    saberFront.motor(1, - x + y - z);   // FR
-    saberFront.motor(2, - x - y - z);     // FL
-    saberBack.motor(1, + x + y - z);      // BR
-    saberBack.motor(2, + x - y + z);    // BL
-}
+    char fl = frw + lat + yaw;
+    char fr = frw - lat - yaw;
+    char rl = frw - lat + yaw;
+    char rr = frw + lat - yaw;
 
-void Movers::setSpeed(byte value) {
-    speedRatio = value / 255;
-}
+    if (fl < 0) {
+        frontDriver.backwardA();
+    } else {
+        frontDriver.forwardA();
+    }
+
+    if (fr < 0) {
+        frontDriver.backwardB();
+    } else {
+        frontDriver.forwardB();
+    }
+
+    if (rl < 0) {
+        rearDriver.backwardA();
+    } else {
+        rearDriver.forwardA();
+    }
+
+    if (rr < 0) {
+        rearDriver.backwardB();
+    } else {
+        rearDriver.forwardB();
+    }
+
+    frontDriver.setSpeedA(abs(fl) * 2);
+    frontDriver.setSpeedB(abs(fr) * 2);
+    rearDriver.setSpeedA(abs(rl) * 2);
+    rearDriver.setSpeedB(abs(rr) * 2);
+};

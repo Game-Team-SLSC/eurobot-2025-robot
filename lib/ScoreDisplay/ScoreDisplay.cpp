@@ -1,11 +1,13 @@
 #include <ScoreDisplay.h>
 #include <Arduino.h>
 #include <RobotSettings.h>
+#include <GlobalState.h>
+#include <arduino-timer.h>
 
-ScoreDisplay::ScoreDisplay() : display(SCORE_DP_CLK, SCORE_DP_DIO) {
-    lastScore = 0;
-    blinking = false;
-    lastBlink = 0;
+GlobalState& globalState = GlobalState::getInstance();
+
+ScoreDisplay::ScoreDisplay() : display(SCORE_DP_CLK, SCORE_DP_DIO), timer() {
+    on = true;
 }
 
 ScoreDisplay& ScoreDisplay::getInstance() {
@@ -14,25 +16,43 @@ ScoreDisplay& ScoreDisplay::getInstance() {
 }
 
 void ScoreDisplay::setup() {
-    display.setBrightness(0x0a);
+    display.setBrightness(7, true);
     display.showNumberDec(DEFAULT_SCORE);
 }
 
-void ScoreDisplay::updateBlink() {
-    if (!blinking) {
-        display.setBrightness(0x0);
-        return;
-    } 
-    
-    if (millis() - lastBlink < BLINK_INTERVAL) return;
-
-    display.setBrightness(0x0a);
-    lastBlink = millis();
+void ScoreDisplay::update() {
+    updateScore();
+    updateBlink();
 }
 
-void ScoreDisplay::setScore(byte score) {
-    if (score == lastScore) return;
+void ScoreDisplay::updateScore() {
+    if (!globalState.score.hasChanged()) return;
+
+    display.showNumberDec(globalState.score.get());
+}
+
+void ScoreDisplay::updateBlink() {
+    if (!globalState.remoteConnected.hasChanged()) return;
     
-    display.showNumberDec(score);
-    lastScore = score;
+    if (globalState.remoteConnected.get()) {
+        timer.cancel();
+        on = true;
+        display.setBrightness(7);
+    } else {
+        timer.every(BLINK_INTERVAL, blink, this);
+    }
+}
+
+bool ScoreDisplay::blink(ScoreDisplay* self) {
+    if (globalState.remoteConnected.get()) return false;
+    
+    self->on = !self->on;
+
+    if (self->on) {
+        self->display.setBrightness(0);
+    } else {
+        self->display.setBrightness(7);
+    }
+
+    return true;
 }

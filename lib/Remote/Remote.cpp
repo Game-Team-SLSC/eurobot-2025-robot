@@ -4,6 +4,7 @@
 #include <Logger.h>
 #include <RF24.h>
 #include <RobotSettings.h>
+#include <printf.h>
 
 const byte ADDRESS[6] = "912CR";
 
@@ -12,13 +13,14 @@ Remote& Remote::getInstance() {
     return instance;
 }
 
-Remote::Remote() {
+Remote::Remote(): radio(RF_CE, RF_CS) {
     lastTransmission = 0;
     dataAvailable = false;
 }
 
 void Remote::setup() {
     radio.begin();
+    printf_begin();
 
     pinMode(RF_IRQ, INPUT);
 

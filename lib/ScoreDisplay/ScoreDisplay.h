@@ -4,24 +4,28 @@
 #include <Arduino.h>
 #include <RobotSettings.h>
 #include <TM1637Display.h>
+#include <arduino-timer.h>
 
 class ScoreDisplay {
     public:
         static ScoreDisplay& getInstance();
 
         void setup();
-        void setScore(byte score);
-        void updateBlink();
+        void update();
         
-        bool blinking;
-
+        
         // Make singleton
         ScoreDisplay(const ScoreDisplay&) = delete;
         ScoreDisplay& operator=(const ScoreDisplay&) = delete;
-    private:
+        private:
+        bool on;
+        
+        Timer<1, millis, ScoreDisplay*> timer;
         TM1637Display display;
-        byte lastScore;
-        unsigned long lastBlink;
+
+        void updateScore();
+        void updateBlink();
+        static bool blink(ScoreDisplay* self);
 
         ScoreDisplay();
 };

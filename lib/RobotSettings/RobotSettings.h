@@ -20,6 +20,7 @@
 #define RF_MOSI 51
 #define RF_SCK 52
 #define RF_IRQ 2
+#define RADIO_TIMEOUT 1000
 
 // STEPPERS
 
@@ -30,6 +31,9 @@
 #define SC_STEP 38
 #define SC_DIR 40
 #define SC_SERIAL Serial3
+
+#define R_SENSE 0.11f
+#define STEPS_PER_MM 80
 
 // SCORE
 
@@ -47,9 +51,23 @@
 #define X_MOVE_FACTOR 255
 #define Y_MOVE_FACTOR 255
 
-#define SBR 10
+#define FL_EN 2
+#define FL_IN1 3
+#define FL_IN2 4
 
-// SERVOS
+#define FR_EN 5
+#define FR_IN1 6
+#define FR_IN2 7
+
+#define RL_EN 8
+#define RL_IN1 9
+#define RL_IN2 10
+
+#define RR_EN 11
+#define RR_IN1 12
+#define RR_IN2 13
+
+// ACTUATORS
 
 enum Servos {
     GRB_LEFT,
@@ -63,38 +81,79 @@ enum Servos {
     BANNER
 };
 
-#define GRB_OPEN_ANGLE 0
-#define GRB_CLOSE_ANGLE 180
+enum PositionName {
+    FOLDED,
+    APPROACH,
+    TRANSPORT,
+    RELEASE,
+    LATERAL,
+    CATCH,
+    S1,
+    S2,
 
-#define GRB_MAGNET_ATTACH_ANGLE 0
-#define GRB_MAGNET_RELEASE_ANGLE 180
+    _POSCOUNT
+};
 
-#define GRB_ARM_DEP_ANGLE 0
-#define GRB_ARM_RET_ANGLE 0
+enum MovementName {
+    MAGNET_ATTACH,
+    ARM_DEPLOY,
+    GRABBER_CATCH,
+    SUCTION_DEPLOY,
+    GRABBER_BLOCK_UP,
+    SUCTION_BLOCK_UP,
+    PUMP_ENABLE,
 
-#define SC_DEP_ANGLE 0
-#define SC_RET_ANGLE 0
+    _MOVCOUNT
+};
+
+#define GRB_RELEASE_ANGLE_L 85
+#define GRB_CATCH_ANGLE_L 95
+
+#define GRB_RELEASE_ANGLE_R 90
+#define GRB_CATCH_ANGLE_R 80
+
+
+#define GRB_MAGNET_ATTACH_ANGLE_L 0
+#define GRB_MAGNET_RELEASE_ANGLE_L 90
+
+#define GRB_MAGNET_ATTACH_ANGLE_R 180
+#define GRB_MAGNET_RELEASE_ANGLE_R 90
+
+
+#define GRB_ARM_DEP_ANGLE_L 110
+#define GRB_ARM_RET_ANGLE_L 180
+
+#define GRB_ARM_DEP_ANGLE_R 80
+#define GRB_ARM_RET_ANGLE_R 10
+
+
+#define SC_DEP_ANGLE_L 180
+#define SC_RET_ANGLE_L 60
+
+#define SC_DEP_ANGLE_R 0
+#define SC_RET_ANGLE_R 120
+
 
 #define BANNER_DEP_ANGLE 0
-#define BANNER_RET_ANGLE 0
+#define BANNER_RET_ANGLE 180
 
 // BUTTONS CONFIG
 
 enum Buttons {
     // auto
-    GAME_START_AUTO,
-    STACK_2_AUTO,
-    STACK_3_AUTO,
+    GAME_START_AUTO_BTN,
+    STACK_2_AUTO_BTN,
+    STACK_3_AUTO_BTN,
 
     // manual
-    APPROACH,
-    TRANSPORT,
-    RELEASE,
-    LATERAL_W_PUMP,
-    CATCH,
+    APPROACH_BTN,
+    TRANSPORT_BTN,
+    RELEASE_BTN,
+    LATERAL_W_PUMP_BTN,
+    CATCH_BTN,
 
-    STAGE_1,
-    STAGE_2,
+    STAGE_1_BTN,
+    STAGE_2_BTN,
 };
 
 // MISC

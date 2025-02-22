@@ -6,8 +6,9 @@
 #include <ScoreDisplay.h>
 #include <Actuators.h>
 #include <RemoteData.h>
+#include <GlobalState.h>
 
-Display& display = Display::getInstance();
+//Display& display = Display::getInstance();
 Movers& movers = Movers::getInstance();
 Remote& remote = Remote::getInstance();
 ScoreDisplay& scoreDisplay = ScoreDisplay::getInstance();
@@ -17,10 +18,12 @@ RemoteData remoteData;
 
 bool remoteErrorShown = false;
 
-void setup() {
-  Serial.begin(9600);
+GlobalState& globalState = GlobalState::getInstance();
 
-  display.setup();
+void setup() {
+  initLogger();
+  //display.setup();
+
   info("Powered up");
 
   movers.setup();
@@ -41,34 +44,18 @@ void setup() {
 }
 
 void updateLibs() {
-  scoreDisplay.updateBlink();
-}
-
-void processControllerUpdate() {
-  if (!remote.hasData()) { return; };
-
-  remote.fetch(remoteData);
-
-  scoreDisplay.setScore(remoteData.score);
-
-  movers.drive(
-    remoteData.joystickRight.x,
-    (remoteData.joystickLeft.y + remoteData.joystickRight.y) / 2,
-    remoteData.joystickRight.x
-  );
-
-  movers.setSpeed(remoteData.slider);
-
-  
+  movers.update();
+  scoreDisplay.update();
 }
 
 bool checkConnection() {
-  if (millis() - remote.lastTransmission < 1000) {
-    scoreDisplay.blinking = false;
+  if (millis() - remote.lastTransmission < RADIO_TIMEOUT) {
+    remoteErrorShown = false;
+    globalState.remoteConnected.set(true);
     return false;
   }
 
-  scoreDisplay.blinking = true;
+  globalState.remoteConnected.set(false);
 
   if (remoteErrorShown) return true;
 
@@ -78,14 +65,15 @@ bool checkConnection() {
     warn("Remote connection lost. Reconnecting...");
   }
 
-  remoteErrorShown = true;
-
   return true;
 }
 
 void loop() {
-  bool remoteConnected = checkConnection();
-  if (remoteConnected) processControllerUpdate();
+  checkConnection();
+  if (remote.hasData()) {
+    remote.fetch(remoteData);
+    globalState.updateFromController(remoteData);
+  }
   updateLibs();
 
   delay(LOOP_DELAY);

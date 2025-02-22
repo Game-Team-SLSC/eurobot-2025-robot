@@ -6,6 +6,9 @@
 #include <Adafruit_PWMServoDriver.h>
 #include <Movement.h>
 #include <Position.h>
+#include <RobotSettings.h>
+#include <TMCStepper.h>
+#include <AccelStepper.h>
 
 class Actuators {
     public:
@@ -37,6 +40,9 @@ class Actuators {
         boolean pumpEnabled;
 
         Adafruit_PWMServoDriver pwm;
+
+        TMC2209Stepper grbDriver, sucDriver;
+        AccelStepper grbStepper, sucStepper;
 };
 
 #endif

@@ -3,18 +3,6 @@
 
 #include <Movement.h>
 
-enum PositionName {
-    FOLDED,
-    APPROACH,
-    TRANSPORT,
-    RELEASE,
-    LATERAL,
-    CATCH,
-    S1,
-    S2,
-    _POSCOUNT
-};
-
 struct MovementSet {
     Movement movement;
     bool state;
