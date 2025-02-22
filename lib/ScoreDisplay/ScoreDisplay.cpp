@@ -4,8 +4,6 @@
 #include <GlobalState.h>
 #include <arduino-timer.h>
 
-GlobalState& globalState = GlobalState::getInstance();
-
 ScoreDisplay::ScoreDisplay() : display(SCORE_DP_CLK, SCORE_DP_DIO), timer() {
     on = true;
 }
@@ -26,15 +24,15 @@ void ScoreDisplay::update() {
 }
 
 void ScoreDisplay::updateScore() {
-    if (!globalState.score.hasChanged()) return;
+    if (!GlobalState::getInstance().score.hasChanged()) return;
 
-    display.showNumberDec(globalState.score.get());
+    display.showNumberDec(GlobalState::getInstance().score.get());
 }
 
 void ScoreDisplay::updateBlink() {
-    if (!globalState.remoteConnected.hasChanged()) return;
+    if (!GlobalState::getInstance().remoteConnected.hasChanged()) return;
     
-    if (globalState.remoteConnected.get()) {
+    if (GlobalState::getInstance().remoteConnected.get()) {
         timer.cancel();
         on = true;
         display.setBrightness(7);
@@ -44,7 +42,7 @@ void ScoreDisplay::updateBlink() {
 }
 
 bool ScoreDisplay::blink(ScoreDisplay* self) {
-    if (globalState.remoteConnected.get()) return false;
+    if (GlobalState::getInstance().remoteConnected.get()) return false;
     
     self->on = !self->on;
 

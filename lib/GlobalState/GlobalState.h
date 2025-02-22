@@ -1,21 +1,10 @@
 #include <DynamicState.h>
 #include <Arduino.h>
 #include <RemoteData.h>
+#include <RobotSettings.h>
 
 #ifndef __GLOBAL_STATE_H__
 #define __GLOBAL_STATE_H__
-
-enum PositionName {
-    FOLDED,
-    APPROACH,
-    TRANSPORT,
-    RELEASE,
-    LATERAL,
-    CATCH,
-    S1,
-    S2,
-    _POSCOUNT
-};
 
 struct Travel {
     char forward;
@@ -31,8 +20,8 @@ class GlobalState{
 
         DynamicState<PositionName> position;
         DynamicState<byte> score;
-        DynamicState<float> speedFactor;
         DynamicState<Travel> travel;
+        DynamicState<float> speedFactor;
         DynamicState<bool> remoteConnected;
 
         // make singleton

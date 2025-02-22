@@ -7,8 +7,6 @@ const float LATERAL_MVT_RATIO = X_MOVE_FACTOR/255;
 const float FRW_MVT_RATIO = Y_MOVE_FACTOR/255;
 const float YAW_FACTOR_RATIO = YAW_FACTOR/255;
 
-GlobalState& globalState = GlobalState::getInstance();
-
 Movers::Movers() :
     frontDriver(FL_EN, FL_IN1, FL_IN2, FR_EN, FR_IN1, FR_IN2),
     rearDriver(RL_EN, RL_IN1, RL_IN2, RR_EN, RR_IN1, RR_IN2)
@@ -25,14 +23,14 @@ void Movers::setup() {
 };
 
 void Movers::update() {
-    if (!globalState.remoteConnected.get()) {
+    if (!GlobalState::getInstance().remoteConnected.get()) {
         frontDriver.stop();
         rearDriver.stop();
         return;
     }
-    if (!globalState.travel.hasChanged()) return;
+    if (!GlobalState::getInstance().travel.hasChanged()) return;
 
-    Travel travel = globalState.travel.get();
+    Travel travel = GlobalState::getInstance().travel.get();
 
     char frw = travel.forward * FRW_MVT_RATIO;
     char lat = travel.lateral * LATERAL_MVT_RATIO;

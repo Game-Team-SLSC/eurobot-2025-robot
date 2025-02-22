@@ -20,8 +20,8 @@ class ScoreDisplay {
         private:
         bool on;
         
-        Timer<1, millis, ScoreDisplay*> timer;
         TM1637Display display;
+        Timer<1, millis, ScoreDisplay*> timer;
 
         void updateScore();
         void updateBlink();

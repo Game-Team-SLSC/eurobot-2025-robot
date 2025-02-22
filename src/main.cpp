@@ -18,8 +18,6 @@ RemoteData remoteData;
 
 bool remoteErrorShown = false;
 
-GlobalState& globalState = GlobalState::getInstance();
-
 void setup() {
   initLogger();
   //display.setup();
@@ -51,11 +49,11 @@ void updateLibs() {
 bool checkConnection() {
   if (millis() - remote.lastTransmission < RADIO_TIMEOUT) {
     remoteErrorShown = false;
-    globalState.remoteConnected.set(true);
+    GlobalState::getInstance().remoteConnected.set(true);
     return false;
   }
 
-  globalState.remoteConnected.set(false);
+  GlobalState::getInstance().remoteConnected.set(false);
 
   if (remoteErrorShown) return true;
 
@@ -72,7 +70,7 @@ void loop() {
   checkConnection();
   if (remote.hasData()) {
     remote.fetch(remoteData);
-    globalState.updateFromController(remoteData);
+    GlobalState::getInstance().updateFromController(remoteData);
   }
   updateLibs();
 
