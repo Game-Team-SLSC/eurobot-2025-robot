@@ -1,247 +1,294 @@
 #include <Actuators.h>
-#include <RobotSettings.h>
-#include <Arduino.h>
-#include <Movement.h>
-#include <Position.h>
+#include <GlobalState.h>
+#include <ActionName.h>
 
+Adafruit_PWMServoDriver Actuators::pwmDriver = Adafruit_PWMServoDriver(0x40);
 
+TMC2209Stepper Actuators::grbDriver = TMC2209Stepper(&GRB_SERIAL, R_SENSE, 0b00);
+TMC2209Stepper Actuators::sucDriver = TMC2209Stepper(&SC_SERIAL, R_SENSE, 0b00);
 
-// Actuators
-Actuators::Actuators() :
-    pwm(0x40),
-    grbDriver(&GRB_SERIAL, R_SENSE, 0b00),
-    sucDriver(&SC_SERIAL, R_SENSE, 0b00),
-    grbStepper(AccelStepper::DRIVER, GRB_STEP, GRB_DIR),
-    sucStepper(AccelStepper::DRIVER, SC_STEP, SC_DIR)
-{
-    positions = {};
-    Movement movements[] = {};
+AccelStepper Actuators::grbStepper = AccelStepper(AccelStepper::DRIVER, GRB_STEP, GRB_DIR);
+AccelStepper Actuators::sucStepper = AccelStepper(AccelStepper::DRIVER, SC_STEP, SC_DIR);
 
-    pumpEnabled = false;
-
-    movements[MAGNET_ATTACH] = Movement(+[](bool state) {
-        return Actuators::getInstance().setMagnets(state);
-    });
-
-    movements[ARM_DEPLOY] = Movement(+[](bool state) {
-        return Actuators::getInstance().setArms(state);
-    });
-
-    movements[GRABBER_CATCH] = Movement(+[](bool state) {
-        return Actuators::getInstance().setGrabbers(state);
-    });
-
-    movements[SUCTION_DEPLOY] = Movement(+[](bool state) {
-        return Actuators::getInstance().setSuction(state);
-    });
-
-    movements[PUMP_ENABLE] = Movement(+[](bool state) {
-        return Actuators::getInstance().setPumps(state);
-    });
-
-    movements[GRABBER_BLOCK_UP] = Movement(+[](bool state) {
-        // TODO
-    });
-
-    movements[SUCTION_BLOCK_UP] = Movement(+[](bool state) {
-        // TODO
-    });
-
-    MovementSet foldedMoves[] = {
-        {movements[ARM_DEPLOY], false},
-        {movements[MAGNET_ATTACH], true},
-        {movements[GRABBER_CATCH], false},
-        {movements[SUCTION_DEPLOY], false},
-        
-        {movements[GRABBER_BLOCK_UP], false},
-        {movements[SUCTION_BLOCK_UP], false},
-        
-        {movements[PUMP_ENABLE], false}
-    };
-
-    MovementSet approachMoves[] = {
-        {movements[ARM_DEPLOY], true},
-        {movements[MAGNET_ATTACH], false},
-        {movements[GRABBER_CATCH], false},
-        {movements[SUCTION_DEPLOY], false},
-        
-        {movements[GRABBER_BLOCK_UP], false},
-        {movements[SUCTION_BLOCK_UP], false},
-        
-        {movements[PUMP_ENABLE], false}
-    };
-
-    MovementSet transportMoves[] = {
-        {movements[ARM_DEPLOY], true},
-        {movements[MAGNET_ATTACH], true},
-        {movements[GRABBER_CATCH], true},
-        {movements[SUCTION_DEPLOY], true},
-        
-        {movements[GRABBER_BLOCK_UP], false},
-        {movements[SUCTION_BLOCK_UP], false},
-        
-        {movements[PUMP_ENABLE], false}
-    };
-
-    MovementSet releaseMoves[] = {
-        {movements[ARM_DEPLOY], true},
-        {movements[MAGNET_ATTACH], false},
-        {movements[GRABBER_CATCH], false},
-        {movements[SUCTION_DEPLOY], false},
-        
-        //{movements[GRABBER_BLOCK_UP], false},
-        //{movements[SUCTION_BLOCK_UP], false},
-        
-        {movements[PUMP_ENABLE], false}
-    };
-
-    MovementSet lateralMoves[] = {
-        {movements[ARM_DEPLOY], false},
-        {movements[MAGNET_ATTACH], true},
-        {movements[GRABBER_CATCH], true},
-        {movements[SUCTION_DEPLOY], true},
-        
-        //{movements[GRABBER_BLOCK_UP], false},
-        //{movements[SUCTION_BLOCK_UP], false},
-        
-        {movements[PUMP_ENABLE], true}
-    };
-
-    MovementSet catchMoves[] = {
-        //{movements[ARM_DEPLOY], true},
-        //{movements[MAGNET_ATTACH], true},
-        {movements[GRABBER_CATCH], true},
-        //{movements[SUCTION_DEPLOY], true},
-        
-        //{movements[GRABBER_BLOCK_UP], false},
-        //{movements[SUCTION_BLOCK_UP], false},
-        
-        //{movements[PUMP_ENABLE], false}
-    };
-
-    MovementSet s1Moves[] = {
-        //{movements[ARM_DEPLOY], false},
-        //{movements[MAGNET_ATTACH], true},
-        //{movements[GRABBER_CATCH], true},
-        //{movements[SUCTION_DEPLOY], true},
-        
-        {movements[GRABBER_BLOCK_UP], false},
-        {movements[SUCTION_BLOCK_UP], false},
-        
-        //{movements[PUMP_ENABLE], true}
-    };
-
-    MovementSet s2Moves[] = {
-        //{movements[ARM_DEPLOY], false},
-        //{movements[MAGNET_ATTACH], true},
-        //{movements[GRABBER_CATCH], true},
-        //{movements[SUCTION_DEPLOY], true},
-        
-        {movements[GRABBER_BLOCK_UP], true},
-        {movements[SUCTION_BLOCK_UP], true},
-        
-        //{movements[PUMP_ENABLE], true}
-    };
-
-    positions[PositionName::FOLDED] = Position(foldedMoves);
-    positions[PositionName::APPROACH] = Position(approachMoves);
-    positions[PositionName::TRANSPORT] = Position(transportMoves);
-    positions[PositionName::RELEASE] = Position(releaseMoves);
-    positions[PositionName::LATERAL] = Position(lateralMoves);
-    positions[PositionName::CATCH] = Position(catchMoves);
-    
-    positions[PositionName::S1] = Position(s1Moves);
-    positions[PositionName::S2] = Position(s2Moves);
-}
-
-Actuators& Actuators::getInstance() {
-    static Actuators instance;
-    return instance;
-}
-// UTILITY
-
-short Actuators::getUSFromAngle(byte angle, boolean ccw) {
-    return map(min(angle, 180), 0, 180, 1000, 2000) - (ccw ? 1000 : 0);
-}
-
-
-// PRIVATE
+Movement* Actuators::movements[_MOVCOUNT];
+Action* Actuators::actions[_ACTCOUNT];
 
 void Actuators::setup() {
-    pwm.begin();
-    pwm.setOscillatorFrequency(27000000);
-    pwm.setPWMFreq(50);
+    pwmDriver.begin();
+    pwmDriver.setOscillatorFrequency(25e6);
+    pwmDriver.setPWMFreq(50);
 
-    GRB_SERIAL.begin(9600);
-    while (!GRB_SERIAL);
+    pinMode(GRB_DIR, OUTPUT);
+    pinMode(GRB_STEP, OUTPUT);
 
-    // see laptop
     grbDriver.begin();
     grbDriver.rms_current(900);
+    grbDriver.pwm_autoscale(true);
     grbDriver.microsteps(16);
-    grbDriver.pwm_autoscale(1);
+    grbDriver.en_spreadCycle();
 
-    grbStepper.setMaxSpeed(STEPS_PER_MM * 100);
+    grbStepper.setMaxSpeed(100 * STEPS_PER_MM);
+    grbStepper.setAcceleration(75 * STEPS_PER_MM);
     grbStepper.enableOutputs();
 
-    SC_SERIAL.begin(9600);
+    grbStepper.setCurrentPosition(0);
+    
+    pinMode(SC_DIR, OUTPUT);
+    pinMode(SC_STEP, OUTPUT);
 
-    pinMode(PUMP_RLY, OUTPUT);
+    sucDriver.begin();
+    sucDriver.rms_current(900);
+    sucDriver.pwm_autoscale(true);
+    sucDriver.microsteps(16);
+    sucDriver.en_spreadCycle();
+
+    sucStepper.setMaxSpeed(100 * STEPS_PER_MM);
+    sucStepper.setAcceleration(75 * STEPS_PER_MM);
+    sucStepper.enableOutputs();
+
+    sucStepper.setCurrentPosition(0);
+
+    movements[MAGNET_ATTACH] = new TimedMovement(attachMagnet, 1000);
+    movements[MAGNET_ATTACH]->addDep(new MovementDependency{
+        MovementCall{movements[ARM_DEPLOY], true},
+        true
+    });
+    movements[MAGNET_ATTACH]->addDep(new MovementDependency{
+        MovementCall{movements[ARM_DEPLOY], true},
+        false
+    });
+
+    movements[ARM_DEPLOY] = new TimedMovement(deployArm, 1000);
+    movements[ARM_DEPLOY]->addDep(new MovementDependency{
+        MovementCall{movements[MAGNET_ATTACH], true},
+        false
+    });
+
+    
+    movements[GRABBER_CATCH] = new TimedMovement(catchBlock, 1000);
+    
+    movements[SUCTION_DEPLOY] = new TimedMovement(deploySuction, 1000);
+    movements[SUCTION_DEPLOY]->addDep(new MovementDependency{
+        MovementCall{movements[PUMP_ENABLE], false},
+        false
+    });
+
+    movements[GRABBER_BLOCK_UP] = new TriggeredMovement(moveGrabber, isGrabberBlockMoved);
+    movements[SUCTION_BLOCK_APPLY] = new TriggeredMovement(moveSuction, isSuctionBlockMoved);
+    movements[SUCTION_BLOCK_APPLY]->addDep(new MovementDependency{
+        MovementCall{movements[SUCTION_DEPLOY], true},
+        false
+    });
+
+    movements[PUMP_ENABLE] = new TimedMovement(enablePump, 1000);
+    movements[BANNER_RELEASE] = new TimedMovement(releaseBanner, 1000);
+
+    static MovementCall foldedMovements[] = {
+        // prevent from breaking magnet
+        {movements[ARM_DEPLOY], false},
+        
+        // put stage 1
+        {movements[GRABBER_BLOCK_UP], false},
+        {movements[SUCTION_BLOCK_APPLY], false},
+
+        // misc
+        {movements[GRABBER_CATCH], true},
+        {movements[SUCTION_DEPLOY], true},
+        {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall approachMovements[] = {
+        // prevent from breaking magnet
+        {movements[ARM_DEPLOY], true},
+        {movements[MAGNET_ATTACH], false},
+        
+        // put stage 1
+        {movements[GRABBER_BLOCK_UP], false},
+        {movements[SUCTION_BLOCK_APPLY], false},
+
+        // misc
+        {movements[GRABBER_CATCH], false},
+        {movements[SUCTION_DEPLOY], false},
+        {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall transportMovements[] = {
+        // prevent from breaking magnet
+        {movements[ARM_DEPLOY], true},
+        {movements[MAGNET_ATTACH], true},
+        
+        // put stage 1
+        {movements[GRABBER_BLOCK_UP], false},
+        {movements[SUCTION_BLOCK_APPLY], true},
+
+        // misc
+        {movements[GRABBER_CATCH], true},
+        {movements[SUCTION_DEPLOY], true},
+        {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall releaseMovements[] = {
+        // prevent from breaking magnet
+        {movements[ARM_DEPLOY], true},
+        {movements[MAGNET_ATTACH], false},
+        
+        // can be any stage
+        //{movements[GRABBER_BLOCK_UP], false},
+        //{movements[SUCTION_BLOCK_APPLY], false},
+
+        // misc
+        {movements[GRABBER_CATCH], false},
+        {movements[SUCTION_DEPLOY], false},
+        {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall lateralMovements[] = {
+        // prevent from breaking magnet
+        {movements[ARM_DEPLOY], true},
+        {movements[MAGNET_ATTACH], false},
+        {movements[ARM_DEPLOY], false},
+        
+        // can be any stage
+        // {movements[GRABBER_BLOCK_UP], false},
+        // {movements[SUCTION_BLOCK_APPLY], false},
+
+        // misc
+        {movements[GRABBER_CATCH], false},
+        {movements[SUCTION_DEPLOY], false},
+        {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall catchMovements[] = {
+        // prevent from breaking magnet
+        {movements[ARM_DEPLOY], true},
+        {movements[MAGNET_ATTACH], false},
+        {movements[ARM_DEPLOY], false},
+        
+        // can be any stage
+        // {movements[GRABBER_BLOCK_UP], false},
+        // {movements[SUCTION_BLOCK_APPLY], false},
+
+        // misc
+        {movements[GRABBER_CATCH], true},
+        {movements[SUCTION_DEPLOY], false},
+        {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall stage1[] = {
+        // prevent from breaking magnet
+        // {movements[ARM_DEPLOY], true},
+        // {movements[MAGNET_ATTACH], false},
+        // {movements[ARM_DEPLOY], false},
+        
+        // can be any stage
+        {movements[GRABBER_BLOCK_UP], false},
+        {movements[SUCTION_BLOCK_APPLY], false},
+
+        // misc
+        // {movements[GRABBER_CATCH], true},
+        // {movements[SUCTION_DEPLOY], false},
+        // {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall stage2[] = {
+        // prevent from breaking magnet
+        // {movements[ARM_DEPLOY], true},
+        // {movements[MAGNET_ATTACH], false},
+        // {movements[ARM_DEPLOY], false},
+        
+        // can be any stage
+        {movements[GRABBER_BLOCK_UP], true},
+        {movements[SUCTION_BLOCK_APPLY], true},
+
+        // misc
+        // {movements[GRABBER_CATCH], true},
+        // {movements[SUCTION_DEPLOY], false},
+        // {movements[PUMP_ENABLE], false}
+    };
+
+    static MovementCall bannerMovements[] = {
+        {movements[BANNER_RELEASE], true}
+    };
+
+    actions[FOLDED] = new Action(foldedMovements, sizeof(foldedMovements) / sizeof(MovementCall));
+    actions[APPROACH] = new Action(approachMovements, sizeof(approachMovements) / sizeof(MovementCall));
+    actions[TRANSPORT] = new Action(transportMovements, sizeof(transportMovements) / sizeof(MovementCall));
+    actions[RELEASE] = new Action(releaseMovements, sizeof(releaseMovements) / sizeof(MovementCall));
+    actions[LATERAL] = new Action(lateralMovements, sizeof(lateralMovements) / sizeof(MovementCall));
+    actions[CATCH] = new Action(catchMovements, sizeof(catchMovements) / sizeof(MovementCall));
+    actions[S1] = new Action(stage1, sizeof(stage1) / sizeof(MovementCall));
+    actions[S2] = new Action(stage2, sizeof(stage2) / sizeof(MovementCall));
+    actions[BANNER] = new Action(bannerMovements, sizeof(bannerMovements) / sizeof(MovementCall));
 }
 
-void Actuators::setMagnets(bool attaching) {
-    pwm.writeMicroseconds(
-        Servos::GRB_MAGNET_LEFT,
-        getUSFromAngle(attaching? GRB_MAGNET_ATTACH_ANGLE_L : GRB_MAGNET_RELEASE_ANGLE_L)
-    );
+void Actuators::update()  {
+    Action* action = actions[GlobalState::action->get()];
+    if (GlobalState::action->hasChanged()) {
+        info("Execute action id %s", String(GlobalState::action->get()).c_str());
+        action->execute();
+        return;
+    }
 
-    pwm.writeMicroseconds(
-        Servos::GRB_MAGNET_RIGHT,
-        getUSFromAngle(attaching? GRB_MAGNET_ATTACH_ANGLE_R : GRB_MAGNET_RELEASE_ANGLE_R)
-    );
+    action->update();
 }
 
-void Actuators::setArms(bool deployed) {
-    pwm.writeMicroseconds(
-        Servos::GRB_ARM_LEFT,
-        getUSFromAngle(deployed? GRB_ARM_DEP_ANGLE_L : GRB_ARM_DEP_ANGLE_L)
-    );
-    pwm.writeMicroseconds(
-        Servos::GRB_ARM_RIGHT,
-        getUSFromAngle(deployed? GRB_ARM_DEP_ANGLE_R : GRB_ARM_DEP_ANGLE_R)
-    );
+// @param angle The desired angle in degrees
+void Actuators::setServoAngle(byte num, byte angle) {
+    pwmDriver.writeMicroseconds(num, map(angle, 0, 180, 1000, 2000));
 }
 
-void Actuators::setGrabbers(bool catching) {
-    pwm.writeMicroseconds(
-        Servos::GRB_LEFT,
-        getUSFromAngle(catching? GRB_CATCH_ANGLE_L : GRB_RELEASE_ANGLE_L)
-    );
-    pwm.writeMicroseconds(
-        Servos::GRB_RIGHT,
-        getUSFromAngle(catching? GRB_CATCH_ANGLE_R : GRB_RELEASE_ANGLE_R)
-    );
+void Actuators::enablePump(bool enable) {
+    printf("Movement: enablePump - %s", enable ? "ON" : "OFF");
+    digitalWrite(PUMP_ENABLE, enable);
 }
 
-void Actuators::setSuction(bool deployed) {
-    pwm.writeMicroseconds(
-        Servos::SC_LEFT,
-        getUSFromAngle(deployed? SC_DEP_ANGLE_L : SC_RET_ANGLE_L)
-    );
-    pwm.writeMicroseconds(
-        Servos::SC_RIGHT,
-        getUSFromAngle(deployed? SC_DEP_ANGLE_R : SC_RET_ANGLE_R)
-    );
+void Actuators::attachMagnet(bool attach) {
+    printf("Movement: attachMagnet - %s", attach ? "ATTACH" : "RELEASE");
+    setServoAngle(GRB_MAGNET_L_PIN, attach ? GRB_MAGNET_ATTACH_ANGLE_L : GRB_MAGNET_RELEASE_ANGLE_L);
+    setServoAngle(GRB_MAGNET_R_PIN, attach ? GRB_MAGNET_ATTACH_ANGLE_R : GRB_MAGNET_RELEASE_ANGLE_R);
 }
 
-void Actuators::setPumps(bool enabled) {
-    digitalWrite(PUMP_RLY, enabled? HIGH : LOW);
+void Actuators::deployArm(bool deploy) {
+    printf("Movement: deployArm - %s", deploy ? "DEPLOY" : "RETRACT");
+    setServoAngle(GRB_ARM_L_PIN, deploy ? GRB_ARM_DEP_ANGLE_L : GRB_ARM_RET_ANGLE_L);
+    setServoAngle(GRB_ARM_R_PIN, deploy ? GRB_ARM_DEP_ANGLE_R : GRB_ARM_RET_ANGLE_R);
 }
 
-void moveGRBBlock(bool up) {
+void Actuators::catchBlock(bool _catch) {
+    printf("Movement: catchBlock - %s", _catch ? "CATCH" : "RELEASE");
+    setServoAngle(GRB_L_PIN, _catch ? GRB_CATCH_ANGLE_L : GRB_RELEASE_ANGLE_L);
+    setServoAngle(GRB_R_PIN, _catch ? GRB_CATCH_ANGLE_R : GRB_RELEASE_ANGLE_R);
+}
+
+void Actuators::deploySuction(bool deploy) {
+    printf("Movement: deploySuction - %s", deploy ? "DEPLOY" : "RETRACT");
+    setServoAngle(SC_L_PIN, deploy ? SC_DEP_ANGLE_L : SC_RET_ANGLE_L);
+    setServoAngle(SC_R_PIN, deploy ? SC_DEP_ANGLE_R : SC_RET_ANGLE_R);
+}
+
+void Actuators::moveGrabber(bool up) {
+    printf("Movement: moveGrabber - %s", up ? "UP" : "DOWN");
     // TODO
 }
 
-void moveSUCBlock(bool up) {
+void Actuators::moveSuction(bool onApplication) {
+    printf("Movement: moveSuction - %s", onApplication ? "ON APPLICATION" : "OFF APPLICATION");
     // TODO
+}
+
+void Actuators::releaseBanner(bool release) {
+    printf("Movement: releaseBanner - %s", release ? "RELEASE" : "HOLD");
+    setServoAngle(BANNER_PIN, release ? BANNER_DEP_ANGLE : BANNER_RET_ANGLE);
+}
+
+bool Actuators::isGrabberBlockMoved(bool up) {
+    printf("Movement check: isGrabberBlockMoved - %s", up ? "UP" : "DOWN");
+    // TODO
+    return true;
+}
+
+bool Actuators::isSuctionBlockMoved(bool onApplication) {
+    printf("Movement check: isSuctionBlockMoved - %s", onApplication ? "ON APPLICATION" : "OFF APPLICATION");
+    // TODO
+    return true;
 }

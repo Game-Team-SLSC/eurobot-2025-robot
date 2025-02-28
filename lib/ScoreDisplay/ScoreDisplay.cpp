@@ -19,12 +19,30 @@ void ScoreDisplay::setup() {
 }
 
 void ScoreDisplay::update() {
+<<<<<<< Updated upstream
     updateScore();
     updateBlink();
 }
 
 void ScoreDisplay::updateScore() {
     if (!GlobalState::getInstance().score.hasChanged()) return;
+=======
+    if (GlobalState::score->hasChanged()) {
+        info("Update score display : %d", GlobalState::score->get());
+        display.showNumberDec(GlobalState::score->get());
+    }
+
+    if (GlobalState::remoteConnected->hasChanged() && !GlobalState::remoteConnected->get()) {
+        isOn = false;
+        info("Blinking score display");
+        Timing::every(
+            BLINK_INTERVAL,
+            +[](void* _) -> bool{
+                isOn = !isOn;
+                return true;
+            });
+    }
+>>>>>>> Stashed changes
 
     display.showNumberDec(GlobalState::getInstance().score.get());
 }

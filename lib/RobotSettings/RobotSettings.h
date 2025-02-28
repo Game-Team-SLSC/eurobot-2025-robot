@@ -12,6 +12,13 @@
 #define WARN_STATE true;
 #define INFO_STATE true;
 
+<<<<<<< Updated upstream:lib/RobotSettings/RobotSettings.h
+=======
+#define INFO_TAG "[INFO]"
+#define WARN_TAG "[WARN]"
+#define ERROR_TAG "[ERROR]"
+
+>>>>>>> Stashed changes:lib/GlobalSettings/GlobalSettings.h
 // RF24
 
 #define RF_CE 48
@@ -140,20 +147,33 @@ enum MovementName {
 // BUTTONS CONFIG
 
 enum Buttons {
+<<<<<<< Updated upstream:lib/RobotSettings/RobotSettings.h
     // auto
+=======
+    // Auto
+>>>>>>> Stashed changes:lib/GlobalSettings/GlobalSettings.h
     GAME_START_AUTO_BTN,
     STACK_2_AUTO_BTN,
     STACK_3_AUTO_BTN,
 
-    // manual
+    // Actions
     APPROACH_BTN,
     TRANSPORT_BTN,
     RELEASE_BTN,
-    LATERAL_W_PUMP_BTN,
-    CATCH_BTN,
+    EXTRACT_STAGE_BTN,
 
+    // Secondary actions
+    RELEASE_BANNER_BTN,
+    CATCH_BTN,
     STAGE_1_BTN,
     STAGE_2_BTN,
+<<<<<<< Updated upstream:lib/RobotSettings/RobotSettings.h
+=======
+    FOLD_BTN,
+    SLOW_DOWN_BTN,
+
+    _BUTCOUNT
+>>>>>>> Stashed changes:lib/GlobalSettings/GlobalSettings.h
 };
 
 // MISC

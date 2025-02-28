@@ -39,10 +39,24 @@ class Actuators {
 
         boolean pumpEnabled;
 
+<<<<<<< Updated upstream
         Adafruit_PWMServoDriver pwm;
 
         TMC2209Stepper grbDriver, sucDriver;
         AccelStepper grbStepper, sucStepper;
 };
+=======
+    static void enablePump(bool enable);
+    static void attachMagnet(bool attach);
+    static void deployArm(bool deploy);
+    static void catchBlock(bool _catch);
+    static void deploySuction(bool deploy);
+    static void moveGrabber(bool up);
+    static void moveSuction(bool onApplication);
+    static void releaseBanner(bool up);
+
+    static bool isGrabberBlockMoved(bool up);
+    static bool isSuctionBlockMoved(bool onApplication);
+>>>>>>> Stashed changes
 
 #endif

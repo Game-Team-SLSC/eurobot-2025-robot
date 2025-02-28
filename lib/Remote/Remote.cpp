@@ -1,5 +1,6 @@
 #include <Remote.h>
 
+<<<<<<< Updated upstream
 #include <Arduino.h>
 #include <Logger.h>
 #include <RF24.h>
@@ -7,11 +8,11 @@
 #include <printf.h>
 
 const byte ADDRESS[6] = "912CR";
+=======
+>>>>>>> Stashed changes
 
-Remote& Remote::getInstance() {
-    static Remote instance;
-    return instance;
-}
+RF24 Remote::radio(RF_CE, RF_CS);
+BaseTimer* Remote::timeoutTimer(nullptr);
 
 Remote::Remote(): radio(RF_CE, RF_CS) {
     lastTransmission = 0;
@@ -39,9 +40,26 @@ void Remote::setup() {
     #endif
 }
 
+<<<<<<< Updated upstream
 bool Remote::hasData() {
     return dataAvailable;
 }
+=======
+/*
+@returns Weither the data was available
+async
+*/
+bool Remote::fetch(RemoteData& dataBuffer) {
+    if (!radio.available()) {
+        if (timeoutTimer == nullptr) {
+            timeoutTimer = Timing::in(RF_TIMEOUT, +[](void* selfPtr) {
+                Remote* self = static_cast<Remote*>(selfPtr);
+                self->timeoutTimer = nullptr;
+                GlobalState::remoteConnected->set(false);
+            GlobalState::remoteConnected->set(false);
+        }, nullptr);
+    }
+>>>>>>> Stashed changes
 
 void Remote::fetch(RemoteData &buffer) {
     dataAvailable = false;

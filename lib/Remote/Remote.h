@@ -6,6 +6,7 @@
 #include <RemoteData.h>
 
 class Remote {
+<<<<<<< Updated upstream
     public:
         static Remote& getInstance();
 
@@ -28,3 +29,15 @@ class Remote {
 };
 
 #endif
+=======
+    private:
+
+    static RF24 radio;
+    static BaseTimer* timeoutTimer;
+    
+    public:
+    
+    static void setup();
+    static bool fetch(RemoteData& dataBuffer);
+};
+>>>>>>> Stashed changes

@@ -5,9 +5,40 @@
 #ifndef __LOGGER_H__
 #define __LOGGER_H__
 
-void initLogger();
-void info(String msg);
-void warn(String msg);
-void error(String msg);
+void loggerSetup();
+
+#ifdef INFO_STATE
+
+#define info(msg, ...) \
+printf(msg, ##__VA_ARGS__); \
+Serial.println()
+
+#else
+
+#define info(msg, ...)
+
+#endif
+
+#ifdef WARN_STATE
+
+#define warn(msg, ...) \
+printf(msg, ##__VA_ARGS__); \
+Serial.println()
+
+#else
+
+#define warn(msg, ...)
+
+#endif
+
+#ifdef ERROR_STATE
+
+#define error(msg, ...) \
+printf(msg, ##__VA_ARGS__); \
+Serial.println()
+
+#else
+
+#define error(msg, ...)
 
 #endif

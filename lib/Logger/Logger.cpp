@@ -9,6 +9,7 @@ const String ERROR_TAG = "[ERROR] : ";
 
 void initLogger() {
     Serial.begin(9600);
+<<<<<<< Updated upstream
 }
 
 void info(String msg) {
@@ -21,4 +22,7 @@ void warn(String msg) {
 
 void error(String msg) {
     Serial.println(ERROR_TAG + msg);
+=======
+    printf_begin();
+>>>>>>> Stashed changes
 }
